@@ -9,7 +9,7 @@ from astrometry.util.fits import fits_table
 from legacypipe.survey import wcs_for_brick,LegacySurveyData
 import multiprocessing as mp
 class seed_maker(object):
-    def __init__(self, ndraws=None, ramin=None, ramax=None, decmin=None, decmax=None, outdir=None, rotation=None, seed=None, surveybricks = None, bricklist = None):
+    def __init__(self, ndraws=None, ramin=None, ramax=None, decmin=None, decmax=None, outdir=None, rotation=None, seed=None, surveybricks = None, bricklist = None, grid_type = None ,seed_num = None):
         self.ndraws = ndraws
         self.ramin = ramin
         self.ramax = ramax
@@ -18,11 +18,13 @@ class seed_maker(object):
         self.outdir = outdir
         self.rotation = 0.
         self.seed = seed
+        self.grid_type = grid_type
         self.surveybricks = surveybricks
         self.bricklist = bricklist
+        self.seed_num = seed_num
     def __call__(self):
         print("grid_sampler")
-        self.grid_sampler('glass')
+        self.grid_sampler(self.grid_type)
         print("grid_transform")
         self.grid_transform()
         print("make_input")
@@ -41,24 +43,49 @@ class seed_maker(object):
             self.distrib = GlassDistribution(npoints = self.ndraws)
             self.distrib()
         elif grid_type == 'rect':
-            self.distrib = RectGrid(shape=self.ndraws, rotation=self.rotation)
+            self.distrib = RectGrid(shape=int(np.sqrt(self.ndraws)), rotation=self.rotation)
+            self.distrib.positions = self.distrib.positions/float(int(np.sqrt(self.ndraws)))
         elif grid_type == 'hex':
-            self.distrib = HexGrid(shape=self.ndraws, rotation=self.rotation)
+            self.distrib = HexGrid(shape=int(np.sqrt(self.ndraws)), rotation=self.rotation)
+            self.distrib.positions = self.distrib.positions/float(int(np.sqrt(self.ndraws)))
+        elif grid_type == "rand":
+            random_state=np.random.RandomState(seed = self.seed_num)
+            self.x, self.y = random_state.uniform(size=(2, self.ndraws) )
+            return None
         else:
             raise ValueError("unknown grid type %s"%grid_type)
         self.x = self.distrib.positions[:,0]
         self.y = self.distrib.positions[:,1]
+
         
     def grid_transform(self):
         """
         transform grid to ra,dec coordinate
         """
-        cmin = np.sin(self.decmin*np.pi/180)
-        cmax = np.sin(self.decmax*np.pi/180)
-        RA   = self.ramin + self.x*(self.ramax - self.ramin)
-        DEC  = 90-np.arccos(cmin + self.y*(cmax - cmin))*180./np.pi
-        self.ra = RA
-        self.dec = DEC
+        if False:
+            xmin = self.ramin/360.
+            xmax = self.ramax/360.
+            ymin = (decmin+90)/180.
+            ymax = (decmax+90)/180.
+            sel = (self.x>=xmin)&(self.x<=xmax)&(self.y>=ymin)&(self.y<=ymax)
+            self.x = self.x[sel]
+            self.y = self.y[sel]
+            self.ndraws = sel.sum()
+        
+            cmin = np.sin(-90*np.pi/180)
+            cmax = np.sin(90*np.pi/180)
+            RA   = self.x*360.
+            DEC  = 90-np.arccos(cmin + self.y*(cmax - cmin))*180./np.pi
+            self.ra = RA
+            self.dec = DEC
+        else:
+            cmin = np.sin(self.decmin*np.pi/180)
+            cmax = np.sin(self.decmax*np.pi/180)
+            RA   = self.ramin + self.x*(self.ramax-self.ramin)
+            DEC  = 90-np.arccos(cmin + self.y*(cmax - cmin))*180./np.pi
+            self.ra = RA
+            self.dec = DEC
+        
         
     def make_input(self):
         """
@@ -159,11 +186,12 @@ if __name__ == "__main__":
     ramax = 157.5
     decmin = -5.5
     decmax = 5.5
+    grid_type = 'rand' #hex, rect, glass
     outdir = "/global/cscratch1/sd/huikong/Obiwan/dr9_LRG/obiwan_out/deep1/"
     seed = fits.getdata(outdir+'/seed.fits')
     surveybricks = fits.getdata("/global/cfs/cdirs/cosmo/work/legacysurvey/dr9/survey-bricks.fits.gz")
     bricklist = np.loadtxt("/global/cscratch1/sd/huikong/Obiwan/dr9_LRG/obiwan_out/deep1/bricklist.txt",dtype = np.str)
-    seeds = seed_maker(ndraws=ndraws, ramin=ramin, ramax=ramax, decmin=decmin, decmax=decmax, outdir=outdir, rotation=0., seed=seed, surveybricks = surveybricks, bricklist = bricklist)
+    seeds = seed_maker(ndraws=ndraws, ramin=ramin, ramax=ramax, decmin=decmin, decmax=decmax, outdir=outdir, rotation=0., seed=seed, surveybricks = surveybricks, bricklist = bricklist, grid_type=grid_type, seed_num = 42)
     seeds()
     
 #shifter --module=mpich-cle6 --image=legacysurvey/legacypipe:DR9.7.1 /bin/bash    

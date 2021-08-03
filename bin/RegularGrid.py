@@ -1,7 +1,7 @@
 """This script, implementing hexagonal grid, is adapted from https://github.com/sweverett/Balrog-GalSim/blob/master/balrog/grid.py."""
 import numpy as np
 class BaseGrid(object):
-    def __init__(self, spacing=60, shape=3600, rotation=0., degree=True):
+    def __init__(self, spacing=1, shape=3600, rotation=0., degree=True):
         self.spacing = spacing
         self.shape = np.empty(2,dtype='f8')
         self.shape[:] = shape
