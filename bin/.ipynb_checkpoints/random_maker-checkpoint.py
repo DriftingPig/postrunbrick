@@ -104,10 +104,3 @@ def make_randoms():
     
 #shifter --module=mpich-cle6 --image=legacysurvey/legacypipe:DR9.7.1 /bin/bash        
 make_randoms()
-
-"""
-0,1--ra,dec
-+maskbits
-+other property from deep
-split to a perbrick level
-"""

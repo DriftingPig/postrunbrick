@@ -2,7 +2,7 @@
 adapted from astrometry.util.stage
 
 quick example to call it: 
-# python postrunbrick.py --survey-dir /global/project/projectdirs/cosmo/data/legacysurvey/dr9/ --outdir /global/cscratch1/sd/huikong/Obiwan/dr9_LRG/obiwan_out/deep1/output/ --threads 30 --dataset normal --nobj 50 --startid 0
+# python postrunbrick.py --survey-dir /global/project/projectdirs/cosmo/data/legacysurvey/dr9/ --outdir /global/cscratch1/sd/huikong/Obiwan/dr9_LRG/obiwan_out/deep1/output/ --threads 30 --dataset normal --nobj 50 --startid 50
 
 survey-dir: set to the current data release directory
 outdir: output directory
@@ -89,7 +89,7 @@ def stage_collect(mp=None, **kwargs):
         from collect import Collect
         clt = Collect(survey_dir=survey_dir, outdir=outdir,subsection='rs%d_cosmos80'%startid)
         for one_set in total_sets:
-            clt.brick_match(threads = kwargs['threads'], bricklist = bricklist, mp=mp, subsection='rs%d_cosmos%s'%(startid,one_set), startid=kwargs['startid'], nobj=kwargs['nobj'],mode = mode)
+            clt.brick_match(threads = kwargs['threads'], bricklist = bricklist, mp=mp, subsection='rs%d_cosmos%s'%(startid,one_set), startid=kwargs['startid'], nobj=kwargs['nobj'],mode = mode, tracer = kwargs['tracer'])
     else:
         mode = 'sim'
         survey_dir = kwargs.get('surveydir')
@@ -98,9 +98,9 @@ def stage_collect(mp=None, **kwargs):
         bricklist = kwargs['bricklist']
         from collect import Collect
         clt = Collect(survey_dir=survey_dir, outdir=outdir,subsection=subsection)
-        clt.brick_match(threads = kwargs['threads'], bricklist = bricklist, mp=mp, subsection=subsection, startid=kwargs['startid'], nobj=kwargs['nobj'], mode = mode)
-        clt.brick_match_dr9(bricklist = bricklist)
-        clt.brick_match_random(bricklist = bricklist)
+        clt.brick_match(threads = kwargs['threads'], bricklist = bricklist, mp=mp, subsection=subsection, startid=kwargs['startid'], nobj=kwargs['nobj'], mode = mode, tracer = kwargs['tracer'])
+        #clt.brick_match_dr9(bricklist = bricklist,tracer = kwargs['tracer'],threads = kwargs['threads'], mp=mp)
+        #clt.brick_match_random(bricklist = bricklist,threads = kwargs['threads'], mp=mp)
     return None
 
 def stage_plots(mp=None, **kwargs):
@@ -152,7 +152,7 @@ def stage_stack_rs(mp=None, **kwargs):
         catalog.stack_all_rs()
     else:
         catalog = BaseSource(survey_dir=survey_dir, outdir=outdir,subsection='cosmos80',startid = kwargs.get('startid'))
-        startids = ['0','50','100','150','200','250']
+        startids = ['0','50','100']
         catalog.stack_all_rs(startids=startids)
     
 def get_parser():
@@ -173,6 +173,7 @@ def get_parser():
     parser.add_argument('--dataset', type=str, default = 'normal', choices=['normal','cosmos'], help='the dataset to process')
     parser.add_argument('--startid', type=int, default=0, help='starting point of injection')
     parser.add_argument('--nobj', type=int, default=0, required = True, help='total number of sources injected')
+    parser.add_argument('--tracer', type=str, default = 'lrg_sv3', choices=['lrg_sv3','elg_sv3'], help='the tracer we are interested in')
     return parser
     
 def post_run_brick(args=None):
@@ -185,6 +186,7 @@ def post_run_brick(args=None):
     dataset = optdict.pop('dataset')
     startid = optdict.pop('startid')
     nobj = optdict.pop('nobj')
+    tracer = optdict.pop('tracer')
     
     kwargs = {}
     initargs = {}
@@ -198,6 +200,7 @@ def post_run_brick(args=None):
     kwargs.update(nobj=nobj)
     kwargs.update(threads=threads)
     kwargs.update(subsection="rs%d"%startid)
+    kwargs.update(tracer=tracer)
     
     stagefunc = CallGlobalTime('stage_%s', globals())
     

@@ -88,5 +88,5 @@ def fig2(catalog,startid):
     class_names = np.array(['PSF','REX', 'EXP','DEV','SER'],dtype=np.str)
     plot_confusion_matrix(y_true, y_pred, classes=class_names,normalize=True,
                       title=None)
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     plt.savefig(topdir+'/fig2.png') 

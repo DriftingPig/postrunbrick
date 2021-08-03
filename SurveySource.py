@@ -86,7 +86,7 @@ class BaseSourceBase(object):
         return cat1, cat2[idx], matched
     
     def target_selection(self,target,south=True,prefix=''):
-        if target in ['ELG','LRG','LRG_sv3_like','LRG_sv3'] is False:
+        if target in ['ELG','LRG','LRG_sv3_like','lrg_sv3','elg_sv3'] is False:
             print('currently support ELG,LRG')
             return [-1]
         gflux = self.trueflux('g',prefix=prefix)
@@ -114,12 +114,18 @@ class BaseSourceBase(object):
             cut_method = isLRG_like(target)
             lrg = cut_method.isLRGlike_color(self.source)
             return lrg 
-        if target == 'LRG_sv3':
+        if target == 'lrg_sv3':
             lrg, lrg_lowdens = sv3_cuts.isLRG(gflux = gflux,rflux=rflux,zflux=zflux,w1flux=w1flux,zfiberflux=zfiberflux,\
                          gnobs=self.nobs_g,rnobs=self.nobs_r,znobs=self.nobs_z,\
                         rfluxivar=self.flux_ivar_r,zfluxivar=self.flux_ivar_z,w1fluxivar=self.flux_ivar_w1,\
                         gaiagmag=self.gaia_phot_g_mean_mag,maskbits=self.maskbits,zfibertotflux=zfibertotflux,primary=None, south=south)
             return lrg
+        if target == 'elg_sv3':
+            elglop, elghip = sv3_cuts.isELG(gflux=gflux, rflux=rflux, zflux=zflux, w1flux=w1flux, w2flux=w2flux,
+                        gfiberflux = gfiberflux, gsnr=(gflux>0),rsnr=(rflux>0),zsnr=(zflux>0),
+                        gnobs=self.nobs_g, rnobs=self.nobs_r, znobs=self.nobs_z, maskbits=self.maskbits, primary=None,
+                        south=south)
+            return elghip
         
     def stack_all_rs(self,startids):
         #startids = ['0','50','100','150','200','250']

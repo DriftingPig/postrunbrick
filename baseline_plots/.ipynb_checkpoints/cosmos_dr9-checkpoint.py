@@ -69,9 +69,9 @@ def stack_randoms():
         else:
             tab = vstack((tab,tab_i))
     tab.write(savedir+'/randoms_all.fits')
-#get_dr9_tractor()
-#for i in range(0,20):
-#    random_maker(idx=i)
-#data = fits.getdata(savedir+'/cosmos_dr9.fits')
-#add_lrg_card(data)
+get_dr9_tractor()
+for i in range(0,20):
+    random_maker(idx=i)
+data = fits.getdata(savedir+'/cosmos_dr9.fits')
+add_lrg_card(data)
 stack_randoms()

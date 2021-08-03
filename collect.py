@@ -18,12 +18,12 @@ class Collect(LegacySimData):
     def __init__(self, survey_dir=None, outdir=None, subsection=None, brick=None, bricklist=None, **kwargs):
         super(Collect,self).__init__(survey_dir=survey_dir, outdir=outdir, subsection=subsection, brick=brick)
     
-    def brick_match(self, threads = None, bricklist = None, mp=None, subsection=None, startid=None, nobj=None, angle=1.5/3600, mode='sim'):
+    def brick_match(self, threads = None, bricklist = None, mp=None, subsection=None, startid=None, nobj=None, angle=1.5/3600, mode='sim',tracer=None):
         inputs = []
         self.subsection = subsection
         bricklist_split = np.array_split(bricklist,threads)
         for i in range(threads):
-            inputs.append((bricklist_split[i],startid, nobj, angle, mode, True))
+            inputs.append((bricklist_split[i],startid, nobj, angle, mode, True,tracer))
         results = list(mp.map(self._brick_match_core, inputs))
         final_tab = None
         if len(results)>0:
@@ -39,27 +39,63 @@ class Collect(LegacySimData):
             final_tab.write(topdir+'/subset_%s.fits'%(self.subsection),overwrite=True)
             print('written %s/subset_%s.fits'%(topdir,self.subsection))
             
-    def brick_match_dr9(self, bricklist, target = 'LRG_sv3',region='south',south=True):
+    def brick_match_dr9(self, bricklist, tracer = None,region='south',south=True, threads = None, mp=None):
         surveydir = "/global/cfs/cdirs/cosmo/work/legacysurvey/dr9/%s/"%region
         outdir = "/global/cfs/cdirs/cosmo/work/legacysurvey/dr9/%s/"%region
         final_tab = None
+        bricklist_split = np.array_split(bricklist,threads)
+        inputs = []
+        for i in range(threads):
+            inputs.append((bricklist_split[i],outdir,tracer,south))
+        results = mp.map(self._brick_match_dr9, inputs)
+        final_tab = None
+        for result in results:
+            if final_tab is None:
+                final_tab = result
+            else:
+                final_tab = vstack((final_tab,result))
+        topdir = os.path.dirname(os.path.abspath(self.outdir))+'/subset'
+        final_tab.write(topdir+'/subset_dr9_%s.fits'%tracer,overwrite=True)    
+        print('written %s/subset_dr9_%s.fits'%(topdir,tracer))    
+    
+    def _brick_match_dr9(self, X):
+        (bricklist, outdir,tracer,south) = X
+        final_tab = None
         for brickname in bricklist:
-            catalog = BaseSource(filetype='tractor', survey_dir=surveydir, outdir=outdir,subsection=None, brick=brickname)
-            tracer = catalog.target_selection(target,south=south)
+            catalog = BaseSource(filetype='tractor', survey_dir=outdir, outdir=outdir,subsection=None, brick=brickname)
+            tracer_sel = catalog.target_selection(target=tracer,south=south)
             tractor_fn = catalog.find_file('tractor')
             T = Table.read(tractor_fn)
-            T_new = T[tracer]
+            T_new = T[tracer_sel]
             if final_tab is not None:
                 final_tab = vstack((final_tab,T_new))
             else:
                 final_tab = T_new
-        topdir = os.path.dirname(os.path.abspath(self.outdir))+'/subset'
-        final_tab.write(topdir+'/subset_dr9_%s.fits'%target,overwrite=True)    
-        print('written %s/subset_dr9_%s.fits'%(topdir,target))        
-            
-    def brick_match_random(self, bricklist):
-        surveydir = "/global/cfs/cdirs/cosmo/work/legacysurvey/dr9/south/"
+        return final_tab
+    
+    def brick_match_random(self, bricklist, threads = None, mp = None):
         outdir = os.path.dirname(os.path.abspath(self.outdir))+'/randoms/'
+        final_tab = None
+        
+        bricklist_split = np.array_split(bricklist,threads)
+        
+        
+        inputs = []
+        for i in range(threads):
+            inputs.append((bricklist_split[i],outdir))
+        results = mp.map(self._brick_match_random, inputs)
+        final_tab = None
+        for result in results:
+            if final_tab is None:
+                final_tab = result
+            else:
+                final_tab = vstack((final_tab,result))
+        topdir = os.path.dirname(os.path.abspath(self.outdir))+'/subset'
+        final_tab.write(topdir+'/subset_random.fits',overwrite=True)    
+        print('written %s/subset_random.fits'%(topdir)) 
+        
+    def _brick_match_random(self, X):
+        (bricklist, outdir) = X
         final_tab = None
         for brickname in bricklist:
             tractor_fn = outdir+'random-%s.fits'%brickname
@@ -68,9 +104,7 @@ class Collect(LegacySimData):
                 final_tab = vstack((final_tab,T))
             else:
                 final_tab = T
-        topdir = os.path.dirname(os.path.abspath(self.outdir))+'/subset'
-        final_tab.write(topdir+'/subset_random.fits',overwrite=True)    
-        print('written %s/subset_random.fits'%(topdir)) 
+        return final_tab
         
     def _brick_match_core(self, X):
         '''
@@ -78,17 +112,17 @@ class Collect(LegacySimData):
         -- sim: match outputs to sim, output shares same dimension as sim
         -- tractor: match outputs to tractor, output shares same dimension as tractor
         '''
-        (bricklist, startid, nobj, angle, mode, MS_star) = X
+        (bricklist, startid, nobj, angle, mode, MS_star, tracer) = X
         final_tab = None
         for brickname in bricklist:
             
             catalog = BaseSource(filetype='tractor', survey_dir=self.survey_dir, outdir=self.outdir,subsection=self.subsection, brick=brickname)
-            lrg = catalog.target_selection('LRG_sv3',south=True)
+            tracer_sel = catalog.target_selection(tracer,south=True)
             
             
             sim = Table.read(self.find_file('simcat',brick=brickname))
             tractor = Table.read(self.find_file('tractor',brick=brickname))
-            tractor['lrg_sv3'] = lrg
+            tractor[tracer] = tracer_sel
             #MS stars
             try:
                 original_sim = Table.read(self.find_file('simorigin',brick=brickname))[startid:startid+nobj] 

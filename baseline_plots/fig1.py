@@ -118,6 +118,11 @@ def flux_plot_sigma(x_value,f_type):
     plt.legend(loc = 'upper left', prop={'size': 9})          
             
 def fig1(catalog,startid):
+    
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
+    if os.path.isdir(topdir) is False:
+        subprocess.call(["mkdir","-p",topdir])
+        
     source = catalog.processed_one
     sel = source['matched']&(source['maskbits']==0)
     source = source[sel]
@@ -156,7 +161,7 @@ def fig1(catalog,startid):
     #plt.subplot(5,2,8)
     #one_sigma_2dplot(w2_truth-w2_measure,w2_measure,title_x = 'w2 true',title_y = r'$\Delta$ w2 (input-output)')
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     plt.subplot(5,2,2)
     #,write_mean=False, write_mean_fn = None
     fn = topdir+"/flux_diff_g.txt"
@@ -175,7 +180,7 @@ def fig1(catalog,startid):
     
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1.png')
@@ -237,7 +242,7 @@ def fig1b(catalog,startid):
     
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1b.png')
@@ -314,7 +319,7 @@ def fig1_cosmos(catalog,startid):
     
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1_cosmos.png')    
@@ -421,7 +426,7 @@ def fig1b_cosmos(catalog,band,set_num, obj = None,startid=None):
     
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1b_cosmos_%s.png'%band)    
@@ -476,7 +481,7 @@ def fig1c(catalog,startid):
     
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1c.png')
@@ -580,7 +585,7 @@ def fig1d(catalog,startid):
     delta_flux, max_bin, bins_n, bins = one_subplot_hist(variable=np.array(dr9_e1), xlabel = 'sersic', ylabel = 'PDF', bins=bins, density = True, mean= False, label = 'e1 dr9', color='y',percentile=0)
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1d.png')
@@ -722,7 +727,7 @@ def fig1e_cosmos(catalog,set_num, startid):
     delta_flux, max_bin, bins_n, bins = one_subplot_hist(variable=np.array(dr9_e1), xlabel = 'sersic', ylabel = 'PDF', bins=bins, density = True, mean= False, label = 'e1 dr9', color='y',percentile=0)
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1e_cosmos.png')
@@ -917,7 +922,7 @@ def fig1e_cosmos_ks(catalog,set_num, startid):
     
     plt.tight_layout()
     
-    topdir = catalog.outdir+'/rs%d_plots/'%startid+catalog.subsection
+    topdir = catalog.outdir+'/rs%d_plots/'%startid
     if os.path.isdir(topdir) is False:
         subprocess.call(["mkdir","-p",topdir])
     plt.savefig(topdir+'/fig1e_cosmos_ks.png')
