@@ -32,7 +32,13 @@ class RectGrid(BaseGrid):
         # mesh
         self.positions = np.array(np.meshgrid(x,y,indexing='ij')).T.reshape((-1,2))
 class HexGrid(BaseGrid):
+
+    def __init__(self, *args, shift=0, **kwargs):
+        self.shift = shift % 2
+        super(HexGrid,self).__init__(*args,**kwargs)
+
     def _make_raw_grid(self):
+
         # Geometric factors of given hexagon
         # spacing = radius
         p = self.spacing * np.tan(np.pi / 6.) # side length / 2
@@ -40,8 +46,9 @@ class HexGrid(BaseGrid):
         xs = x - p # second line, shifted by half a side
         y = np.arange(*self._ry,step=2*p)
         x,y = np.meshgrid(x,y,indexing='ij')
-        x[:,1::2] = xs[:,None]
+        x[:,self.shift::2] = xs[:,None]
         self.positions = np.array([x,y]).T.reshape((-1,2))
+        
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
     grid = RectGrid(shape=1000)
